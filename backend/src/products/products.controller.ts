@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { ProductsService, CreateProductDto } from './products.service';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateProductDto } from './dto';
+import { ProductsService } from './products.service';
 
 @Controller('products')
 export class ProductsController {
@@ -21,9 +23,9 @@ export class ProductsController {
     return this.products.findOne(id);
   }
 
-  // TODO: protéger avec un guard JWT et prendre sellerId depuis l'utilisateur connecté
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateProductDto) {
-    return this.products.create(dto);
+  create(@Body() dto: CreateProductDto, @Req() req: any) {
+    return this.products.create(dto, req.user.sub);
   }
 }

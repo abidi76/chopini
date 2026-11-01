@@ -1,20 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Condition, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-
-export interface CreateProductDto {
-  title: string;
-  description: string;
-  price: number;
-  condition: Condition;
-  categoryId: string;
-  sellerId: string;
-  brand?: string;
-  size?: string;
-  city?: string;
-  attributes?: Prisma.InputJsonValue;
-  imageUrls?: string[];
-}
+import { CreateProductDto } from './dto';
 
 @Injectable()
 export class ProductsService {
@@ -49,11 +36,13 @@ export class ProductsService {
     return product;
   }
 
-  create(dto: CreateProductDto) {
-    const { imageUrls = [], ...data } = dto;
+  create(dto: CreateProductDto, sellerId: string) {
+    const { imageUrls = [], attributes, ...data } = dto;
     return this.prisma.product.create({
       data: {
         ...data,
+        sellerId,
+        attributes: attributes as Prisma.InputJsonValue | undefined,
         images: { create: imageUrls.map((url, position) => ({ url, position })) },
       },
       include: { images: true },

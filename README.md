@@ -13,6 +13,7 @@ cd backend
 cp .env.example .env
 npm install
 npx prisma migrate dev --name init
+npx prisma db seed                   # catégories de départ
 npm run start:dev                    # http://localhost:3001
 
 cd ../frontend
@@ -21,12 +22,14 @@ npm run dev                          # http://localhost:3000
 ```
 
 ## Endpoints (MVP)
+- `POST /auth/register`, `POST /auth/login`, `GET /auth/me` (Bearer token)
+- `GET /categories`
 - `GET /products?category=&condition=&minPrice=&maxPrice=&q=`
 - `GET /products/:id`
-- `POST /products`
+- `POST /products` (authentifié)
 
 ## À faire
-- Authentification (JWT) et rôles
+- Rôles et permissions (admin, modération)
 - Upload d'images (Cloudinary / S3)
 - Commandes, paiement (à la livraison, Konnect, Flouci)
 - Messagerie, avis, signalements, modération

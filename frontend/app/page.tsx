@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import { API, CONDITIONS } from './lib/api';
+
 type Product = {
   id: string;
   title: string;
@@ -5,8 +8,6 @@ type Product = {
   condition: string;
   images: { url: string }[];
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function getProducts(): Promise<Product[]> {
   try {
@@ -25,11 +26,13 @@ export default async function Home() {
       {products.length === 0 && <p>Aucune annonce pour le moment.</p>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
         {products.map((p) => (
-          <article key={p.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: '0.75rem' }}>
-            {p.images[0] && <img src={p.images[0].url} alt={p.title} style={{ width: '100%', borderRadius: 6 }} />}
-            <h3 style={{ margin: '0.5rem 0 0.25rem' }}>{p.title}</h3>
-            <p style={{ margin: 0 }}>{p.price} TND · {p.condition}</p>
-          </article>
+          <Link key={p.id} href={`/products/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <article style={{ border: '1px solid #ddd', borderRadius: 8, padding: '0.75rem' }}>
+              {p.images[0] && <img src={p.images[0].url} alt={p.title} style={{ width: '100%', borderRadius: 6 }} />}
+              <h3 style={{ margin: '0.5rem 0 0.25rem' }}>{p.title}</h3>
+              <p style={{ margin: 0 }}>{p.price} TND · {CONDITIONS[p.condition] ?? p.condition}</p>
+            </article>
+          </Link>
         ))}
       </div>
     </main>
