@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum Condition {
+  NEW_WITH_TAG
+  NEW
+  VERY_GOOD
+  GOOD
+  FAIR
+}
+
+enum ProductStatus {
+  ACTIVE
+  SOLD
+  HIDDEN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  CARD
+  KONNECT
+  FLOUCI
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String
+  name          String
+  city          String?
+  role          Role      @default(BUYER)
+  isProSeller   Boolean   @default(false)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  products      Product[]
+  orders        Order[]   @relation("BuyerOrders")
+  sentMessages  Message[] @relation("SentMessages")
+  reviewsGiven  Review[]  @relation("ReviewAuthor")
+  reviewsGot    Review[]  @relation("ReviewTarget")
+  reports       Report[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Decimal       @db.Decimal(10, 2)
+  condition   Condition
+  status      ProductStatus @default(ACTIVE)
+  brand       String?
+  size        String?
+  city        String?
+  // champs spécifiques à la catégorie (garantie, date de péremption, etc.)
+  attributes  Json?
+  createdAt   DateTime      @default(now())
+
+  sellerId    String
+  seller      User          @relation(fields: [sellerId], references: [id])
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  conversations Conversation[]
+  reports     Report[]
+
+  @@index([categoryId, status])
+  @@index([sellerId])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  position  Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @default(CASH_ON_DELIVERY)
+  total         Decimal       @db.Decimal(10, 2)
+  address       String
+  phone         String
+  createdAt     DateTime      @default(now())
+
+  buyerId       String
+  buyer         User          @relation("BuyerOrders", fields: [buyerId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  price     Decimal @db.Decimal(10, 2)
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id])
+  buyerId   String
+  sellerId  String
+  messages  Message[]
+  createdAt DateTime  @default(now())
+
+  @@unique([productId, buyerId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  authorId  String
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  targetId  String
+  target    User     @relation("ReviewTarget", fields: [targetId], references: [id])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reason     String
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+}
